@@ -22,7 +22,7 @@ propensities = function(convenience_sample, reference_sample, covariates, algori
 	n_convenience = nrow(convenience_sample)
 	n_reference = nrow(reference_sample)
 
-	data = rbind(convenience_sample[, covariates], reference_sample[, covariates])
+	data = rbind(convenience_sample[, covariates, drop = FALSE], reference_sample[, covariates, drop = FALSE])
 	labels = append(rep(1, n_convenience), rep(0, n_reference))
 	model_weights = append(rep(n_convenience / n_reference, n_convenience), rep(1, n_reference))
 
@@ -37,6 +37,119 @@ propensities = function(convenience_sample, reference_sample, covariates, algori
 		convenience = probabilities[1:n_convenience],
 		reference = probabilities[(n_convenience + 1):length(probabilities)]
 	)
+}
+
+#' Predicts unknown responses
+#'
+#' It uses the matching method introduced by Rivers (2007). The idea is to model the relationship between y_k and x_k using the convenience sample in order to predict y_k for the reference sample. You can then predict the total using the `total_estimation` method.
+#'
+#' Training of the models is done via the `caret` package. The algorithm specified in \code{algorithm} must match one of the names in the list of algorithms supported by `caret`. If the estimated variable is categorical, probabilities are returned.
+#'
+#' @param convenience_sample Data frame containing the non-probabilistic sample.
+#' @param reference_sample Data frame containing the probabilistic sample.
+#' @param covariates String vector specifying the common variables to use for training.
+#' @param estimated_var String specifying the variable to estimate.
+#' @param positive_label String specifying the label to be considered positive if the estimated variable is categorical. Leave it as the default NULL otherwise.
+#' @param algorithm A string specifying which classification or regression model to use (same as caret's method).
+#' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
+#' @param ... Further parameters to be passed to the \link[caret]{train} function.
+#' @return A vector containing the estimated responses for the reference sample.
+#' @references Rivers, D. (2007). \emph{Sampling for Web Surveys}. Presented in Joint Statistical Meetings, Salt Lake City, UT.
+#' @examples
+#' #Simple example with default parameters
+#' N = 50000
+#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' estimated_votes = data.frame(
+#'    vote_gen = matching(sampleNP, sampleP, covariates, "vote_gen")
+#' )
+#' total_estimation(estimated_votes, N / nrow(estimated_votes), c("vote_gen"), N)
+matching = function(convenience_sample, reference_sample, covariates, estimated_var, positive_label = NULL, algorithm = "glm", proc = NULL, ...) {
+	data = convenience_sample[, covariates, drop = FALSE]
+	values = convenience_sample[, estimated_var]
+	test = reference_sample[, covariates, drop = FALSE]
+	model = train(data, values, algorithm, preProcess = proc, trControl = trainControl(classProbs =  TRUE), ...)
+
+	if (is.null(positive_label))
+		return(predict(model, test))
+	else
+		return(predict(model, test, type = "prob")[, positive_label])
+}
+
+#' Calculates a model based estimation
+#'
+#' It uses the model based estimator. The idea in order to estimate the population total is to add the sample responses and the predicted responses for the individuals not contained in the sample. See for example Valliant et al. (2000).
+#'
+#' Training of the models is done via the `caret` package. The algorithm specified in \code{algorithm} must match one of the names in the list of algorithms supported by `caret`.
+#'
+#' @param sample_data Data frame containing the sample.
+#' @param full_data Data frame containing all the individuals contained in the population.
+#' @param covariates String vector specifying the common variables to use for training.
+#' @param estimated_var String specifying the variable to estimate.
+#' @param estimate_mean Boolean specifying whether the mean estimation should be returned. Otherwise, the total estimation is returned by default.
+#' @param positive_label String specifying the label to be considered positive if the estimated variable is categorical. Leave it as the default NULL otherwise.
+#' @param algorithm A string specifying which classification or regression model to use (same as caret's method).
+#' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
+#' @param ... Further parameters to be passed to the \link[caret]{train} function.
+#' @return The population total estimation (or mean if specified by the `estimate_mean` parameter).
+#' @references Valliant, R., Dorfman, A. H., Royall, R. M. (2000) \emph{Finite population sampling and inference: a prediction approach.} Wiley, New York.
+#' @examples
+#' #Simple example with default parameters
+#' covariates = c("education_primaria", "education_secundaria",
+#'    "education_terciaria", "age", "sex", "language")
+#' model_based(sampleNP, population, covariates, "vote_gen")
+model_based = function(sample_data, full_data, covariates, estimated_var, estimate_mean = FALSE, positive_label = NULL, algorithm = "glm", proc = NULL, ...) {
+	known_values = sample_data[, estimated_var]
+	if (!is.null(positive_label))
+		known_values = known_values == positive_label
+	all_data = rbind(sample_data[, covariates, drop = FALSE], full_data[, covariates, drop = FALSE])
+	all_predicted_values = matching(sample_data, all_data, covariates, estimated_var, positive_label, algorithm = algorithm, proc = proc, ...)
+	known_predicted_values = all_predicted_values[1:length(known_values)]
+	predicted_values = all_predicted_values[(length(known_values) + 1):length(all_predicted_values)]
+	total = sum(known_values, predicted_values, -known_predicted_values)
+	
+	if (estimate_mean)
+		return(total / nrow(full_data))
+	else
+		return(total)
+}
+
+#' Calculates a model assisted estimation
+#'
+#' It uses the model assisted estimator introduced by Särndal et al. (1992).
+#'
+#' Training of the models is done via the `caret` package. The algorithm specified in \code{algorithm} must match one of the names in the list of algorithms supported by `caret`.
+#'
+#' @param sample_data Data frame containing the sample.
+#' @param weights Vector containing the sample weights.
+#' @param full_data Data frame containing all the individuals contained in the population.
+#' @param covariates String vector specifying the common variables to use for training.
+#' @param estimated_var String specifying the variable to estimate.
+#' @param estimate_mean Boolean specifying whether the mean estimation should be returned. Otherwise, the total estimation is returned by default.
+#' @param positive_label String specifying the label to be considered positive if the estimated variable is categorical. Leave it as the default NULL otherwise.
+#' @param algorithm A string specifying which classification or regression model to use (same as caret's method).
+#' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
+#' @param ... Further parameters to be passed to the \link[caret]{train} function.
+#' @return The population total estimation (or mean if specified by the `estimate_mean` parameter).
+#' @references Särndal, C. E., Swensson, B., Wretman, J. (1992). \emph{Model assisted survey sampling.} Springer, New York.
+#' @examples
+#' #Simple example with default parameters
+#' covariates = c("education_primaria", "education_secundaria",
+#'    "education_terciaria", "age", "sex", "language")
+#' model_assisted(sampleNP, nrow(population) / nrow(sampleNP),
+#'    population, covariates, "vote_gen")
+model_assisted = function(sample_data, weights, full_data, covariates, estimated_var, estimate_mean = FALSE, positive_label = NULL, algorithm = "glm", proc = NULL, ...) {
+	known_values = sample_data[, estimated_var]
+	if (!is.null(positive_label))
+		known_values = known_values == positive_label
+	all_data = rbind(sample_data[, covariates, drop = FALSE], full_data[, covariates, drop = FALSE])
+	predicted_values = matching(sample_data, all_data, covariates, estimated_var, positive_label, algorithm = algorithm, proc = proc, ...)
+	known_predicted_values = predicted_values[1:length(known_values)]
+	total = sum(predicted_values, -known_predicted_values) + sum((known_values - known_predicted_values) * weights)
+	
+	if (estimate_mean)
+		return(total / nrow(full_data))
+	else
+		return(total)
 }
 
 #' Calculates Valliant weights
@@ -171,7 +284,8 @@ lee_weights = function(convenience_propensities, reference_propensities, g = 5) 
 #' n = nrow(sampleNP)
 #' N = 50000
 #' language_total = 45429
-#' covariates = c("education_primaria","education_secundaria","education_terciaria","age","sex")
+#' covariates = c("education_primaria","education_secundaria",
+#'    "education_terciaria","age","sex")
 #' pi = propensities(sampleNP, sampleP, covariates, algorithm = "glm", smooth = FALSE)
 #' wi = sc_weights(pi$convenience)
 #' calib_weights(sampleNP$language, language_total, wi, N, method = "raking")
@@ -187,17 +301,18 @@ calib_weights = function(Xs, totals, initial_weights, N, ...) {
 #' @param sample A data frame containing the sample with the variables for which the means are to be calculated.
 #' @param weights A vector of pre-calculated weights.
 #' @param estimated_vars String vector specifying the variables in the sample to be estimated.
+#' @param N An integer specifying the population size (optional).
 #' @return A vector with the corresponding estimations.
 #' @examples
 #' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' psa_weights = sc_weights(data_propensities$convenience)
 #' mean_estimation(sampleNP, psa_weights, c("vote_pens"))
-mean_estimation = function(sample, weights, estimated_vars) {
-	sum_weights = sum(weights)
+mean_estimation = function(sample, weights, estimated_vars, N = NULL) {
+	total = ifelse(is.null(N), sum(weights), N)
 
 	sapply(estimated_vars, function(var_name) {
-		sum(sample[, var_name] * weights) / sum_weights
+		sum(sample[, var_name] * weights) / total
 	})
 }
 
@@ -231,6 +346,7 @@ total_estimation = function(sample, weights, estimated_vars, N) {
 #' @param weights A vector of pre-calculated weights.
 #' @param estimated_vars String vector specifying the variables in the sample to be estimated.
 #' @param class String vector specifying which class (value) proportion is to be estimated in each variable. The \emph{i}-th element of this vector corresponds to the class of which proportion is desired to estimate of the \emph{i}-th variable of the vector specified in \code{estimated_vars}.
+#' @param N An integer specifying the population size (optional).
 #' @return A vector with the corresponding estimations.
 #' @examples
 #' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
@@ -240,11 +356,11 @@ total_estimation = function(sample, weights, estimated_vars, N) {
 #' #The function will estimate the proportion of individuals
 #' #with the 0 value in vote_pens and the 1 value in vote_gen
 #' prop_estimation(sampleNP, psa_weights, c("vote_pens", "vote_gen"), c(0, 1))
-prop_estimation = function(sample, weights, estimated_vars, class) {
-  sum_weights = sum(weights)
+prop_estimation = function(sample, weights, estimated_vars, class, N = NULL) {
+  total = ifelse(is.null(N), sum(weights), N)
 
   sapply(estimated_vars, function(var_name) {
-    sum(sample[, var_name] == class[estimated_vars %in% var_name] * weights) / sum_weights
+    sum(sample[, var_name] == class[estimated_vars %in% var_name] * weights) / total
   })
 }
 
@@ -306,6 +422,37 @@ jackknife_variance = function(estimated_vars, convenience_sample, reference_samp
 	(sample_size - 1) / sample_size * sum((estimations - mean(estimations))^2) * correction_factor
 }
 
+#' Calculates Jackknife variance with reweighting
+#'
+#' Calculates the variance of a given estimator by Leave-One-Out Jackknife (Quenouille, 1956) with reweighting in each iteration.
+#'
+#' The estimation of the variance requires a recalculation of the estimates in each iteration which might involve weighting adjustments, leading to an increase in computation time. It is expected that the estimated variance captures the weighting adjustments' variability and the estimator's variability.
+#'
+#' @param sample Data frame containing the non-probabilistic sample.
+#' @param estimator Function that, given a sample as a parameter, returns an estimation.
+#' @param N Integer indicating the population size. Optional.
+#' @return The resulting variance.
+#' @references Quenouille, M. H. (1956). \emph{Notes on bias in estimation.} Biometrika, 43(3/4), 353-360.
+#' @examples
+#' \donttest{
+#' covariates = c("education_primaria", "education_secundaria",
+#'    "education_terciaria", "age", "sex", "language")
+#' vote_gen_estimator = function(sample) {
+#'    model_based(sample, population, covariates, "vote_gen")
+#' }
+#' generic_jackknife_variance(sampleNP, vote_gen_estimator)
+#' }
+generic_jackknife_variance = function(sample, estimator, N = NULL) {
+	sample_size = nrow(sample)
+	correction_factor = ifelse(is.null(N), 1, 1 - sample_size / N)
+	
+	estimations = sapply(1:sample_size, function(i) {
+		estimator(sample[-i,])
+	})
+
+	(sample_size - 1) / sample_size * sum((estimations - mean(estimations))^2) * correction_factor
+}
+
 #' Calculates Jackknife variance without reweighting
 #'
 #' Calculates the variance of a given estimator by Leave-One-Out Jackknife (Quenouille, 1956) with the original adjusted weights.
@@ -351,7 +498,8 @@ fast_jackknife_variance = function(sample, weights, estimated_vars, N = NULL) {
 #' psa_weights = sc_weights(pi$convenience)
 #' N = 50000
 #' Y_est = total_estimation(sampleNP, psa_weights, estimated_vars = "vote_pens", N = N)
-#' VY_est = fast_jackknife_variance(sampleNP, psa_weights, estimated_vars = "vote_pens") * N^2
+#' VY_est = fast_jackknife_variance(sampleNP, psa_weights,
+#'    estimated_vars = "vote_pens") * N^2
 #' confidence_interval(Y_est, sqrt(VY_est), confidence = 0.90)
 confidence_interval = function(estimation, std_dev, confidence = 0.95) {
 	deviation = std_dev * qnorm(1 - (1 - confidence) / 2)
@@ -388,6 +536,7 @@ confidence_interval = function(estimation, std_dev, confidence = 0.95) {
 #'   \item education_terciaria. A binary variable indicating if the highest academic level achieved by the individual is Tertiary Education.
 #'   \item age. A numeric variable, with values ranging from 18 to 100, indicating the age of the individual.
 #'   \item sex. A binary variable indicating if the individual is a man.
+#'   \item language. A binary variable indicating if the individual is a native.
 #' }
 #'
 #' @docType data
@@ -396,3 +545,22 @@ confidence_interval = function(estimation, std_dev, confidence = 0.95) {
 #' @usage sampleNP
 #' @references Ferri-García, R., & Rueda, M. (2018). \emph{Efficiency of propensity score adjustment and calibration on the estimation from non-probabilistic online surveys}. SORT-Statistics and Operations Research Transactions, 1(2), 159-162.
 "sampleNP"
+
+#' A full population
+#'
+#' A dataset of a simulated fictitious population of 50,000 individuals. Further details on the generation of the dataset can be found in Ferri-García and Rueda (2018). The variables present in the dataset are the following:
+#' \itemize{
+#'   \item education_primaria. A binary variable indicating if the highest academic level achieved by the individual is Primary Education.
+#'   \item education_secundaria. A binary variable indicating if the highest academic level achieved by the individual is Secondary Education.
+#'   \item education_terciaria. A binary variable indicating if the highest academic level achieved by the individual is Tertiary Education.
+#'   \item age. A numeric variable, with values ranging from 18 to 100, indicating the age of the individual.
+#'   \item sex. A binary variable indicating if the individual is a man.
+#'   \item language. A binary variable indicating if the individual is a native.
+#' }
+#'
+#' @docType data
+#' @keywords datasets
+#' @name population
+#' @usage population
+#' @references Ferri-García, R., & Rueda, M. (2018). \emph{Efficiency of propensity score adjustment and calibration on the estimation from non-probabilistic online surveys}. SORT-Statistics and Operations Research Transactions, 1(2), 159-162.
+"population"

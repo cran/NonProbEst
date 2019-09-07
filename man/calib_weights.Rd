@@ -30,7 +30,8 @@ The function uses the `calib` function from the `sampling` package for the estim
 n = nrow(sampleNP)
 N = 50000
 language_total = 45429
-covariates = c("education_primaria","education_secundaria","education_terciaria","age","sex")
+covariates = c("education_primaria","education_secundaria",
+   "education_terciaria","age","sex")
 pi = propensities(sampleNP, sampleP, covariates, algorithm = "glm", smooth = FALSE)
 wi = sc_weights(pi$convenience)
 calib_weights(sampleNP$language, language_total, wi, N, method = "raking")

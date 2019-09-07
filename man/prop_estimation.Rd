@@ -4,7 +4,7 @@
 \alias{prop_estimation}
 \title{Estimates the population proportion}
 \usage{
-prop_estimation(sample, weights, estimated_vars, class)
+prop_estimation(sample, weights, estimated_vars, class, N = NULL)
 }
 \arguments{
 \item{sample}{A data frame containing the sample with the variables for which the means are to be calculated.}
@@ -14,6 +14,8 @@ prop_estimation(sample, weights, estimated_vars, class)
 \item{estimated_vars}{String vector specifying the variables in the sample to be estimated.}
 
 \item{class}{String vector specifying which class (value) proportion is to be estimated in each variable. The \emph{i}-th element of this vector corresponds to the class of which proportion is desired to estimate of the \emph{i}-th variable of the vector specified in \code{estimated_vars}.}
+
+\item{N}{An integer specifying the population size (optional).}
 }
 \value{
 A vector with the corresponding estimations.

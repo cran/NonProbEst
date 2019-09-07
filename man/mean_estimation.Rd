@@ -4,7 +4,7 @@
 \alias{mean_estimation}
 \title{Estimates the population means}
 \usage{
-mean_estimation(sample, weights, estimated_vars)
+mean_estimation(sample, weights, estimated_vars, N = NULL)
 }
 \arguments{
 \item{sample}{A data frame containing the sample with the variables for which the means are to be calculated.}
@@ -12,6 +12,8 @@ mean_estimation(sample, weights, estimated_vars)
 \item{weights}{A vector of pre-calculated weights.}
 
 \item{estimated_vars}{String vector specifying the variables in the sample to be estimated.}
+
+\item{N}{An integer specifying the population size (optional).}
 }
 \value{
 A vector with the corresponding estimations.

@@ -26,6 +26,7 @@ pi = propensities(sampleNP, sampleP, covariates, algorithm = "glm", smooth = FAL
 psa_weights = sc_weights(pi$convenience)
 N = 50000
 Y_est = total_estimation(sampleNP, psa_weights, estimated_vars = "vote_pens", N = N)
-VY_est = fast_jackknife_variance(sampleNP, psa_weights, estimated_vars = "vote_pens") * N^2
+VY_est = fast_jackknife_variance(sampleNP, psa_weights,
+   estimated_vars = "vote_pens") * N^2
 confidence_interval(Y_est, sqrt(VY_est), confidence = 0.90)
 }

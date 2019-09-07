@@ -19,6 +19,7 @@ A dataset of 1000 individuals extracted from the subpopulation of individuals wi
   \item education_terciaria. A binary variable indicating if the highest academic level achieved by the individual is Tertiary Education.
   \item age. A numeric variable, with values ranging from 18 to 100, indicating the age of the individual.
   \item sex. A binary variable indicating if the individual is a man.
+  \item language. A binary variable indicating if the individual is a native.
 }
 }
 \references{
