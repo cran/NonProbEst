@@ -46,5 +46,5 @@ model_assisted(sampleNP, nrow(population) / nrow(sampleNP),
    population, covariates, "vote_gen")
 }
 \references{
-Särndal, C. E., Swensson, B., Wretman, J. (1992). \emph{Model assisted survey sampling.} Springer, New York.
+Särndal, C. E., Swensson, B., & Wretman, J. (1992). \emph{Model assisted survey sampling.} Springer, New York.
 }

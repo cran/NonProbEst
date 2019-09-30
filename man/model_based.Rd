@@ -43,5 +43,5 @@ covariates = c("education_primaria", "education_secundaria",
 model_based(sampleNP, population, covariates, "vote_gen")
 }
 \references{
-Valliant, R., Dorfman, A. H., Royall, R. M. (2000) \emph{Finite population sampling and inference: a prediction approach.} Wiley, New York.
+Valliant, R., Dorfman, A. H., & Royall, R. M. (2000) \emph{Finite population sampling and inference: a prediction approach.} Wiley, New York.
 }

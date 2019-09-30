@@ -9,8 +9,9 @@
 #' @param reference_sample Data frame containing the probabilistic sample.
 #' @param covariates String vector specifying the common variables to use for training.
 #' @param algorithm A string specifying which classification or regression model to use (same as caret's method).
-#' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
 #' @param smooth A logical value; if TRUE, propensity estimates pi_i are smoothed applying the formula (1000*pi_i + 0.5)/1001
+#' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
+#' @param trControl A trainControl specifying the computational nuances of the \link[caret]{train} function.
 #' @param ... Further parameters to be passed to the \link[caret]{train} function.
 #' @return A list containing `convenience` propensities and `reference` propensities.
 #' @references Buskirk, T. D., & Kolenikov, S. (2015). \emph{Finding respondents in the forest: A comparison of logistic regression and random forest models for response propensity weighting and stratification.} Survey Methods: Insights from the Field, 17.
@@ -18,16 +19,17 @@
 #' #Simple example with default parameters
 #' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
 #' propensities(sampleNP, sampleP, covariates)
-propensities = function(convenience_sample, reference_sample, covariates, algorithm = "glm", smooth = FALSE, proc = NULL, ...) {
+propensities = function(convenience_sample, reference_sample, covariates, algorithm = "glm", smooth = FALSE, proc = NULL, trControl = trainControl(classProbs = TRUE), ...) {
 	n_convenience = nrow(convenience_sample)
 	n_reference = nrow(reference_sample)
 
 	data = rbind(convenience_sample[, covariates, drop = FALSE], reference_sample[, covariates, drop = FALSE])
 	labels = append(rep(1, n_convenience), rep(0, n_reference))
 	model_weights = append(rep(n_convenience / n_reference, n_convenience), rep(1, n_reference))
-
+	
+	trControl$classProbs = TRUE
 	model = train(data, factor(labels, levels = c(1, 0), labels = c("Positive", "Negative")), algorithm, weights = model_weights,
-		preProcess = proc, trControl = trainControl(classProbs =  TRUE), ...)
+		preProcess = proc, trControl = trControl, ...)
 	probabilities = predict(model, data, type = "prob")$Positive
 
 	if (smooth)
@@ -91,7 +93,7 @@ matching = function(convenience_sample, reference_sample, covariates, estimated_
 #' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
 #' @param ... Further parameters to be passed to the \link[caret]{train} function.
 #' @return The population total estimation (or mean if specified by the `estimate_mean` parameter).
-#' @references Valliant, R., Dorfman, A. H., Royall, R. M. (2000) \emph{Finite population sampling and inference: a prediction approach.} Wiley, New York.
+#' @references Valliant, R., Dorfman, A. H., & Royall, R. M. (2000) \emph{Finite population sampling and inference: a prediction approach.} Wiley, New York.
 #' @examples
 #' #Simple example with default parameters
 #' covariates = c("education_primaria", "education_secundaria",
@@ -130,7 +132,7 @@ model_based = function(sample_data, full_data, covariates, estimated_var, estima
 #' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
 #' @param ... Further parameters to be passed to the \link[caret]{train} function.
 #' @return The population total estimation (or mean if specified by the `estimate_mean` parameter).
-#' @references Särndal, C. E., Swensson, B., Wretman, J. (1992). \emph{Model assisted survey sampling.} Springer, New York.
+#' @references Särndal, C. E., Swensson, B., & Wretman, J. (1992). \emph{Model assisted survey sampling.} Springer, New York.
 #' @examples
 #' #Simple example with default parameters
 #' covariates = c("education_primaria", "education_secundaria",
@@ -172,7 +174,7 @@ valliant_weights = function(propensities) {
 
 #' Calculates Schonlau and Couper weights
 #'
-#' Computes weights from propensity estimates using the (1 - p_i)/pi_i formula introduced in Schonlau and Couper (2017).
+#' Computes weights from propensity estimates using the (1 - pi_i)/pi_i formula introduced in Schonlau and Couper (2017).
 #'
 #' The function takes the vector of propensities \eqn{\pi(x)} and calculates the weights to be applied in the Hajek estimator using the formula that can be found in Schonlau and Couper (2017). For an individual \emph{i}, weight is calculated as follows:
 #' \deqn{w_i = \frac{1 - \pi_i (x)}{\pi_i (x)}}
@@ -208,15 +210,14 @@ sc_weights = function(propensities) {
 #' vd_weights(data_propensities$convenience, data_propensities$reference)
 vd_weights = function(convenience_propensities, reference_propensities, g = 5) {
 	propensities = append(convenience_propensities, reference_propensities)
-	strata = sapply(propensities, function(data, Ls){
-	  cuts = cut(1:length(data), Ls, labels = FALSE)
-	  data_order = order(data)
-	  strata = vector()
-	  for (i in 1:Ls) {
-	    strata[data_order[cuts == i]] = i
-	  }
-	  strata
-	}, Ls = g)
+	
+	cuts = cut(1:length(propensities), g, labels = FALSE)
+	data_order = order(propensities)
+	strata = vector()
+	
+	for (i in 1:g) {
+		strata[data_order[cuts == i]] = i
+	}
 
 	stratum_weights = sapply(1:g, function(i) {
 		1 / mean(propensities[strata == i])
@@ -246,15 +247,14 @@ vd_weights = function(convenience_propensities, reference_propensities, g = 5) {
 #' lee_weights(data_propensities$convenience, data_propensities$reference)
 lee_weights = function(convenience_propensities, reference_propensities, g = 5) {
 	propensities = append(convenience_propensities, reference_propensities)
-	strata = sapply(propensities, function(data, Ls){
-	  cuts = cut(1:length(data), Ls, labels = FALSE)
-	  data_order = order(data)
-	  strata = vector()
-	  for (i in 1:Ls) {
-	    strata[data_order[cuts == i]] = i
-	  }
-	  strata
-	}, Ls = g)
+	
+	cuts = cut(1:length(propensities), g, labels = FALSE)
+	data_order = order(propensities)
+	strata = vector()
+	
+	for (i in 1:g) {
+		strata[data_order[cuts == i]] = i
+	}
 
 	n_convenience = length(convenience_propensities)
 	n_reference = length(reference_propensities)
@@ -378,6 +378,7 @@ prop_estimation = function(sample, weights, estimated_vars, class, N = NULL) {
 #' @param algorithm A string specifying which classification or regression model to use (same as caret's method). By default, its value is "glm" (logistic regression).
 #' @param smooth A logical value; if TRUE, propensity estimates pi_i are smoothed applying the formula (1000*pi_i + 0.5)/1001
 #' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
+#' @param trControl A trainControl specifying the computational nuances of the \link[caret]{train} function.
 #' @param weighting.func A string specifying which function should be used to compute weights from propensity scores. Available functions are the following: \itemize{ \item \code{sc} calls \link{sc_weights}. \item \code{valliant} calls \link{valliant_weights}. \item \code{lee} calls \link{lee_weights}. \item \code{vd} calls \link{vd_weights}. }
 #' @param g If \code{weighting.func = "lee"} or \code{weighting.func = "vd"}, this element specifies the number of strata to use; by default, its value is 5.
 #' @param calib A logical value; if TRUE, PSA weights are used as initial weights for calibration. By default, its value is FALSE.
@@ -402,14 +403,14 @@ prop_estimation = function(sample, weights, estimated_vars, class, N = NULL) {
 #' calib = T, calib_vars, totals, args.calib = list(method = "linear"))
 #' }
 jackknife_variance = function(estimated_vars, convenience_sample, reference_sample,
-                              covariates, N = NULL, algorithm = "glm", smooth = FALSE, proc = NULL, weighting.func = "sc", g = 5,
+                              covariates, N = NULL, algorithm = "glm", smooth = FALSE, proc = NULL, trControl = trainControl(classProbs = TRUE), weighting.func = "sc", g = 5,
                               calib = FALSE, calib_vars = NULL, totals = NULL, args.calib = NULL, ...) {
 	sample_size = nrow(convenience_sample)
 	correction_factor = ifelse(is.null(N), 1, 1 - sample_size / N)
 
 	estimations = sapply(1:sample_size, function(i) {
 		sample <- convenience_sample[-i,]
-		pi <- propensities(sample, reference_sample, covariates, algorithm, smooth, ...)
+		pi <- propensities(sample, reference_sample, covariates, algorithm, smooth, proc, trControl, ...)
 		if(weighting.func == "sc") wi <- sc_weights(pi$convenience)
 		if(weighting.func == "valliant") wi <- valliant_weights(pi$convenience)
 		if(weighting.func == "lee") wi <- lee_weights(pi$convenience, pi$reference, g)

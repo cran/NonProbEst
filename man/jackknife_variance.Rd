@@ -6,8 +6,9 @@
 \usage{
 jackknife_variance(estimated_vars, convenience_sample, reference_sample,
   covariates, N = NULL, algorithm = "glm", smooth = FALSE,
-  proc = NULL, weighting.func = "sc", g = 5, calib = FALSE,
-  calib_vars = NULL, totals = NULL, args.calib = NULL, ...)
+  proc = NULL, trControl = trainControl(classProbs = TRUE),
+  weighting.func = "sc", g = 5, calib = FALSE, calib_vars = NULL,
+  totals = NULL, args.calib = NULL, ...)
 }
 \arguments{
 \item{estimated_vars}{A string vector specifying the variables for which the estimators' variance are to be estimated.}
@@ -25,6 +26,8 @@ jackknife_variance(estimated_vars, convenience_sample, reference_sample,
 \item{smooth}{A logical value; if TRUE, propensity estimates pi_i are smoothed applying the formula (1000*pi_i + 0.5)/1001}
 
 \item{proc}{A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.}
+
+\item{trControl}{A trainControl specifying the computational nuances of the \link[caret]{train} function.}
 
 \item{weighting.func}{A string specifying which function should be used to compute weights from propensity scores. Available functions are the following: \itemize{ \item \code{sc} calls \link{sc_weights}. \item \code{valliant} calls \link{valliant_weights}. \item \code{lee} calls \link{lee_weights}. \item \code{vd} calls \link{vd_weights}. }}
 

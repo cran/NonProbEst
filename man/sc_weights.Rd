@@ -13,7 +13,7 @@ sc_weights(propensities)
 A vector with the corresponding weights.
 }
 \description{
-Computes weights from propensity estimates using the (1 - p_i)/pi_i formula introduced in Schonlau and Couper (2017).
+Computes weights from propensity estimates using the (1 - pi_i)/pi_i formula introduced in Schonlau and Couper (2017).
 }
 \details{
 The function takes the vector of propensities \eqn{\pi(x)} and calculates the weights to be applied in the Hajek estimator using the formula that can be found in Schonlau and Couper (2017). For an individual \emph{i}, weight is calculated as follows:

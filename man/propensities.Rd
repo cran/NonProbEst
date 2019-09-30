@@ -5,7 +5,8 @@
 \title{Calculates each sample propensities}
 \usage{
 propensities(convenience_sample, reference_sample, covariates,
-  algorithm = "glm", smooth = FALSE, proc = NULL, ...)
+  algorithm = "glm", smooth = FALSE, proc = NULL,
+  trControl = trainControl(classProbs = TRUE), ...)
 }
 \arguments{
 \item{convenience_sample}{Data frame containing the non-probabilistic sample.}
@@ -19,6 +20,8 @@ propensities(convenience_sample, reference_sample, covariates,
 \item{smooth}{A logical value; if TRUE, propensity estimates pi_i are smoothed applying the formula (1000*pi_i + 0.5)/1001}
 
 \item{proc}{A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.}
+
+\item{trControl}{A trainControl specifying the computational nuances of the \link[caret]{train} function.}
 
 \item{...}{Further parameters to be passed to the \link[caret]{train} function.}
 }
