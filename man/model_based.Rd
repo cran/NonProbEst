@@ -4,9 +4,17 @@
 \alias{model_based}
 \title{Calculates a model based estimation}
 \usage{
-model_based(sample_data, full_data, covariates, estimated_var,
-  estimate_mean = FALSE, positive_label = NULL, algorithm = "glm",
-  proc = NULL, ...)
+model_based(
+  sample_data,
+  full_data,
+  covariates,
+  estimated_var,
+  estimate_mean = FALSE,
+  positive_label = NULL,
+  algorithm = "glm",
+  proc = NULL,
+  ...
+)
 }
 \arguments{
 \item{sample_data}{Data frame containing the sample.}

@@ -25,7 +25,7 @@ propensities = function(convenience_sample, reference_sample, covariates, algori
 
 	data = rbind(convenience_sample[, covariates, drop = FALSE], reference_sample[, covariates, drop = FALSE])
 	labels = append(rep(1, n_convenience), rep(0, n_reference))
-	model_weights = append(rep(n_convenience / n_reference, n_convenience), rep(1, n_reference))
+	model_weights = append(rep(1, n_convenience), rep(n_convenience / n_reference, n_reference))
 	
 	trControl$classProbs = TRUE
 	model = train(data, factor(labels, levels = c(1, 0), labels = c("Positive", "Negative")), algorithm, weights = model_weights,

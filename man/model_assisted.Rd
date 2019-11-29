@@ -4,9 +4,18 @@
 \alias{model_assisted}
 \title{Calculates a model assisted estimation}
 \usage{
-model_assisted(sample_data, weights, full_data, covariates, estimated_var,
-  estimate_mean = FALSE, positive_label = NULL, algorithm = "glm",
-  proc = NULL, ...)
+model_assisted(
+  sample_data,
+  weights,
+  full_data,
+  covariates,
+  estimated_var,
+  estimate_mean = FALSE,
+  positive_label = NULL,
+  algorithm = "glm",
+  proc = NULL,
+  ...
+)
 }
 \arguments{
 \item{sample_data}{Data frame containing the sample.}

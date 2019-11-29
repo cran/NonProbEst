@@ -1,7 +1,7 @@
 Package: NonProbEst
 Type: Package
 Title: Estimation in Nonprobability Sampling
-Version: 0.2.1
+Version: 0.2.2
 Author: Luis Castro Martín <luiscastro193@gmail.com>, Ramón Ferri García <rferri@ugr.es> and María del Mar Rueda <mrueda@ugr.es>
 Maintainer: Luis Castro Martín <luiscastro193@gmail.com>
 Description: Different inference procedures are proposed in the literature to correct for selection bias that might be introduced with non-random selection mechanisms. A class of methods to correct for selection bias is to apply a statistical model to predict the units not in the sample (super-population modeling). Other studies use calibration or Statistical Matching (statistically match nonprobability and probability samples). To date, the more relevant methods are weighting by Propensity Score Adjustment (PSA).
@@ -12,8 +12,8 @@ License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
 Imports: caret, sampling, e1071
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.1
 NeedsCompilation: no
-Packaged: 2019-09-30 12:32:52 UTC; luis
+Packaged: 2019-11-29 11:03:27 UTC; luis
 Repository: CRAN
-Date/Publication: 2019-09-30 12:50:02 UTC
+Date/Publication: 2019-11-29 11:40:02 UTC

@@ -4,11 +4,24 @@
 \alias{jackknife_variance}
 \title{Calculates Jackknife variance with reweighting}
 \usage{
-jackknife_variance(estimated_vars, convenience_sample, reference_sample,
-  covariates, N = NULL, algorithm = "glm", smooth = FALSE,
-  proc = NULL, trControl = trainControl(classProbs = TRUE),
-  weighting.func = "sc", g = 5, calib = FALSE, calib_vars = NULL,
-  totals = NULL, args.calib = NULL, ...)
+jackknife_variance(
+  estimated_vars,
+  convenience_sample,
+  reference_sample,
+  covariates,
+  N = NULL,
+  algorithm = "glm",
+  smooth = FALSE,
+  proc = NULL,
+  trControl = trainControl(classProbs = TRUE),
+  weighting.func = "sc",
+  g = 5,
+  calib = FALSE,
+  calib_vars = NULL,
+  totals = NULL,
+  args.calib = NULL,
+  ...
+)
 }
 \arguments{
 \item{estimated_vars}{A string vector specifying the variables for which the estimators' variance are to be estimated.}

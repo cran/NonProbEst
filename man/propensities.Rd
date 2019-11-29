@@ -4,9 +4,16 @@
 \alias{propensities}
 \title{Calculates each sample propensities}
 \usage{
-propensities(convenience_sample, reference_sample, covariates,
-  algorithm = "glm", smooth = FALSE, proc = NULL,
-  trControl = trainControl(classProbs = TRUE), ...)
+propensities(
+  convenience_sample,
+  reference_sample,
+  covariates,
+  algorithm = "glm",
+  smooth = FALSE,
+  proc = NULL,
+  trControl = trainControl(classProbs = TRUE),
+  ...
+)
 }
 \arguments{
 \item{convenience_sample}{Data frame containing the non-probabilistic sample.}

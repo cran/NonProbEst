@@ -4,8 +4,16 @@
 \alias{matching}
 \title{Predicts unknown responses}
 \usage{
-matching(convenience_sample, reference_sample, covariates, estimated_var,
-  positive_label = NULL, algorithm = "glm", proc = NULL, ...)
+matching(
+  convenience_sample,
+  reference_sample,
+  covariates,
+  estimated_var,
+  positive_label = NULL,
+  algorithm = "glm",
+  proc = NULL,
+  ...
+)
 }
 \arguments{
 \item{convenience_sample}{Data frame containing the non-probabilistic sample.}
