@@ -154,6 +154,50 @@ model_assisted = function(sample_data, weights, full_data, covariates, estimated
 		return(total)
 }
 
+#' Calculates a model calibrated estimation
+#'
+#' It uses the model calibrated estimator introduced by Wu et al. (2001).
+#'
+#' Training of the models is done via the `caret` package. The algorithm specified in \code{algorithm} must match one of the names in the list of algorithms supported by `caret`.
+#'
+#' @param sample_data Data frame containing the sample.
+#' @param weights Vector containing the sample weights.
+#' @param full_data Data frame containing all the individuals contained in the population.
+#' @param covariates String vector specifying the common variables to use for training.
+#' @param estimated_var String specifying the variable to estimate.
+#' @param estimate_mean Boolean specifying whether the mean estimation should be returned. Otherwise, the total estimation is returned by default.
+#' @param positive_label String specifying the label to be considered positive if the estimated variable is categorical. Leave it as the default NULL otherwise.
+#' @param algorithm A string specifying which classification or regression model to use (same as caret's method).
+#' @param proc A string or vector of strings specifying if any of the data preprocessing techniques available in \link[caret]{train} function from `caret` package should be applied to data prior to the propensity estimation. By default, its value is NULL and no preprocessing is applied.
+#' @param ... Further parameters to be passed to the \link[caret]{train} function.
+#' @return The population total estimation (or mean if specified by the `estimate_mean` parameter).
+#' @references Wu, C., & Sitter, R. R. (2001). \emph{A model-calibration approach to using complete auxiliary information from survey data.} Journal of the American Statistical Association, 96(453), 185-193.
+#' @examples
+#' #Simple example with default parameters
+#' covariates = c("education_primaria", "education_secundaria",
+#'    "education_terciaria", "age", "sex", "language")
+#' model_calibrated(sampleNP, nrow(population) / nrow(sampleNP),
+#'    population, covariates, "vote_gen")
+model_calibrated = function(sample_data, weights, full_data, covariates, estimated_var, estimate_mean = FALSE, positive_label = NULL, algorithm = "glm", proc = NULL, ...) {
+	if (length(weights) == 1)
+		weights = rep(weights, nrow(sample_data))
+	
+	known_values = sample_data[, estimated_var]
+	if (!is.null(positive_label))
+		known_values = known_values == positive_label
+	all_data = rbind(sample_data[, covariates, drop = FALSE], full_data[, covariates, drop = FALSE])
+	predicted_values = matching(sample_data, all_data, covariates, estimated_var, positive_label, algorithm = algorithm, proc = proc, ...)
+	known_predicted_values = predicted_values[1:length(known_values)]
+	predicted_total = sum(predicted_values, -known_predicted_values)
+	final_weights = calib(known_predicted_values, weights, predicted_total, method = "raking") * weights
+	total = sum(known_values * final_weights)
+	
+	if (estimate_mean)
+		return(total / nrow(full_data))
+	else
+		return(total)
+}
+
 #' Calculates Valliant weights
 #'
 #' Computes weights from propensity estimates using the 1/pi_i formula introduced in Valliant (2019).

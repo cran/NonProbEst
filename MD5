@@ -1,6 +1,6 @@
-6b7f131dfbf3ed741ba8a01867279a89 *DESCRIPTION
+cc608101af9fb01ce5e3db0d159d7ed9 *DESCRIPTION
 d523b32a4832a7019102f5f1c47e6759 *NAMESPACE
-a9d3d7d32eec085b9ecc16cb5315cbce *R/NonProbEst.R
+66bc3a8e879bcdb6dd3e31734115f024 *R/NonProbEst.R
 e0daa565cdf063a6500d2a319829d70b *data/population.RData
 1a9734fda3544ceb7399ac6ffcbf55f1 *data/sampleNP.RData
 9e0a8cc91e3abbdf5b028c5dbfca2544 *data/sampleP.RData
@@ -14,6 +14,7 @@ d8d895c736894068a9c983d0fa2601ef *man/matching.Rd
 09d7ed71fc7c4da940f782413c2d1fd6 *man/mean_estimation.Rd
 8bba20fe000503bcb1b900f1075ad242 *man/model_assisted.Rd
 5f1f4872363e559b3ab8839f0484cc40 *man/model_based.Rd
+ad33f9237bba5da87c3ddc22497d3c22 *man/model_calibrated.Rd
 75e5389b9ce0fb8bf8834e10f1826eb9 *man/population.Rd
 bbdfefcef5700fec043ecea65c649ee2 *man/prop_estimation.Rd
 5b54778fd55120b37f91f3c90a33b2d2 *man/propensities.Rd
