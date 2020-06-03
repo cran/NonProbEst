@@ -20,7 +20,7 @@ The function takes the vector of propensities \eqn{\pi(x)} and calculates the we
 \deqn{w_i = 1/\pi_i (x)}
 }
 \examples{
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
 data_propensities = propensities(sampleNP, sampleP, covariates)
 valliant_weights(data_propensities$convenience)
 }

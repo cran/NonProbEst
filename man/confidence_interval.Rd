@@ -21,7 +21,7 @@ Calculates the confidence interval for the estimator considered.
 }
 \examples{
 covariates = c("education_primaria","education_secundaria",
-"education_terciaria", "age", "sex")
+"age", "sex")
 pi = propensities(sampleNP, sampleP, covariates, algorithm = "glm", smooth = FALSE)
 psa_weights = sc_weights(pi$convenience)
 N = 50000

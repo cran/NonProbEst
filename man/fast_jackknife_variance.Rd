@@ -25,7 +25,7 @@ Calculates the variance of a given estimator by Leave-One-Out Jackknife (Quenoui
 The variance estimation is performed by eliminating an individual at each iteration with its corresponding weight and estimating the mean of the corresponding subsample, which is further used in the Jackknife formula as the usual procedure. The calculation of variance estimates through this procedure might take less computation time but also might not take into account the variance of the weighting method.
 }
 \examples{
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
 data_propensities = propensities(sampleNP, sampleP, covariates)
 psa_weights = sc_weights(data_propensities$convenience)
 fast_jackknife_variance(sampleNP, psa_weights, c("vote_pens"), 50000)

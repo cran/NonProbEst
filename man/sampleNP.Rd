@@ -4,7 +4,9 @@
 \name{sampleNP}
 \alias{sampleNP}
 \title{A non-probabilistic sample}
-\format{An object of class \code{data.frame} with 1000 rows and 9 columns.}
+\format{
+An object of class \code{data.frame} with 1000 rows and 9 columns.
+}
 \usage{
 sampleNP
 }

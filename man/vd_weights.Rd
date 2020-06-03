@@ -25,7 +25,7 @@ The function takes the vector of propensities \eqn{\pi(x)} and calculates the we
 where \eqn{g_i} represents the strata to which \emph{i} belongs, and \eqn{n(g_i)} is the number of individuals in the \eqn{g_i} strata.
 }
 \examples{
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
 data_propensities = propensities(sampleNP, sampleP, covariates)
 vd_weights(data_propensities$convenience, data_propensities$reference)
 }

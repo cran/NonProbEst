@@ -22,7 +22,7 @@ A vector with the corresponding estimations.
 Estimates the population totals for the specified variables measured in a sample given some pre-calculated weights.
 }
 \examples{
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
 data_propensities = propensities(sampleNP, sampleP, covariates)
 psa_weights = sc_weights(data_propensities$convenience)
 total_estimation(sampleNP, psa_weights, c("vote_pens"), 50000)

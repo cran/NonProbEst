@@ -4,7 +4,9 @@
 \name{sampleP}
 \alias{sampleP}
 \title{A probabilistic sample}
-\format{An object of class \code{data.frame} with 500 rows and 5 columns.}
+\format{
+An object of class \code{data.frame} with 500 rows and 5 columns.
+}
 \usage{
 sampleP
 }

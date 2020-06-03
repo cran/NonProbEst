@@ -2,7 +2,7 @@
 % Please edit documentation in R/NonProbEst.R
 \name{matching}
 \alias{matching}
-\title{Predicts unknown responses}
+\title{Predicts unknown responses by matching}
 \usage{
 matching(
   convenience_sample,
@@ -44,9 +44,11 @@ Training of the models is done via the `caret` package. The algorithm specified 
 \examples{
 #Simple example with default parameters
 N = 50000
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
+if (is.numeric(sampleNP$vote_gen))
+   sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
 estimated_votes = data.frame(
-   vote_gen = matching(sampleNP, sampleP, covariates, "vote_gen")
+   vote_gen = matching(sampleNP, sampleP, covariates, "vote_gen", 'T')
 )
 total_estimation(estimated_votes, N / nrow(estimated_votes), c("vote_gen"), N)
 }

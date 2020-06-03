@@ -2,7 +2,7 @@
 % Please edit documentation in R/NonProbEst.R
 \name{generic_jackknife_variance}
 \alias{generic_jackknife_variance}
-\title{Calculates Jackknife variance with reweighting}
+\title{Calculates Jackknife variance with reweighting for an arbitrary estimator}
 \usage{
 generic_jackknife_variance(sample, estimator, N = NULL)
 }
@@ -25,9 +25,12 @@ The estimation of the variance requires a recalculation of the estimates in each
 \examples{
 \donttest{
 covariates = c("education_primaria", "education_secundaria",
-   "education_terciaria", "age", "sex", "language")
+   "age", "sex", "language")
+if (is.numeric(sampleNP$vote_gen))
+   sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
 vote_gen_estimator = function(sample) {
-   model_based(sample, population, covariates, "vote_gen")
+   model_based(sample, population, covariates,
+      "vote_gen", positive_label = 'T', algorithm = 'glmnet')
 }
 generic_jackknife_variance(sampleNP, vote_gen_estimator)
 }

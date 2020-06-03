@@ -4,7 +4,9 @@
 \name{population}
 \alias{population}
 \title{A full population}
-\format{An object of class \code{data.frame} with 50000 rows and 6 columns.}
+\format{
+An object of class \code{data.frame} with 50000 rows and 6 columns.
+}
 \usage{
 population
 }

@@ -1,4 +1,4 @@
-#' Calculates each sample propensities
+#' Calculates sample propensities
 #'
 #' Given a convenience sample and a reference sample, computes estimates on the propensity to participate in the convenience sample based on classification models to be selected by the user.
 #'
@@ -17,7 +17,7 @@
 #' @references Buskirk, T. D., & Kolenikov, S. (2015). \emph{Finding respondents in the forest: A comparison of logistic regression and random forest models for response propensity weighting and stratification.} Survey Methods: Insights from the Field, 17.
 #' @examples
 #' #Simple example with default parameters
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' propensities(sampleNP, sampleP, covariates)
 propensities = function(convenience_sample, reference_sample, covariates, algorithm = "glm", smooth = FALSE, proc = NULL, trControl = trainControl(classProbs = TRUE), ...) {
 	n_convenience = nrow(convenience_sample)
@@ -26,7 +26,7 @@ propensities = function(convenience_sample, reference_sample, covariates, algori
 	data = rbind(convenience_sample[, covariates, drop = FALSE], reference_sample[, covariates, drop = FALSE])
 	labels = append(rep(1, n_convenience), rep(0, n_reference))
 	model_weights = append(rep(1, n_convenience), rep(n_convenience / n_reference, n_reference))
-	
+
 	trControl$classProbs = TRUE
 	model = train(data, factor(labels, levels = c(1, 0), labels = c("Positive", "Negative")), algorithm, weights = model_weights,
 		preProcess = proc, trControl = trControl, ...)
@@ -41,7 +41,7 @@ propensities = function(convenience_sample, reference_sample, covariates, algori
 	)
 }
 
-#' Predicts unknown responses
+#' Predicts unknown responses by matching
 #'
 #' It uses the matching method introduced by Rivers (2007). The idea is to model the relationship between y_k and x_k using the convenience sample in order to predict y_k for the reference sample. You can then predict the total using the `total_estimation` method.
 #'
@@ -60,9 +60,11 @@ propensities = function(convenience_sample, reference_sample, covariates, algori
 #' @examples
 #' #Simple example with default parameters
 #' N = 50000
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
+#' if (is.numeric(sampleNP$vote_gen))
+#'    sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
 #' estimated_votes = data.frame(
-#'    vote_gen = matching(sampleNP, sampleP, covariates, "vote_gen")
+#'    vote_gen = matching(sampleNP, sampleP, covariates, "vote_gen", 'T')
 #' )
 #' total_estimation(estimated_votes, N / nrow(estimated_votes), c("vote_gen"), N)
 matching = function(convenience_sample, reference_sample, covariates, estimated_var, positive_label = NULL, algorithm = "glm", proc = NULL, ...) {
@@ -95,10 +97,13 @@ matching = function(convenience_sample, reference_sample, covariates, estimated_
 #' @return The population total estimation (or mean if specified by the `estimate_mean` parameter).
 #' @references Valliant, R., Dorfman, A. H., & Royall, R. M. (2000) \emph{Finite population sampling and inference: a prediction approach.} Wiley, New York.
 #' @examples
-#' #Simple example with default parameters
+#' #Simple example
 #' covariates = c("education_primaria", "education_secundaria",
-#'    "education_terciaria", "age", "sex", "language")
-#' model_based(sampleNP, population, covariates, "vote_gen")
+#'    "age", "sex", "language")
+#' if (is.numeric(sampleNP$vote_gen))
+#'    sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
+#' model_based(sampleNP, population, covariates,
+#'    "vote_gen", positive_label = 'T', algorithm = 'glmnet')
 model_based = function(sample_data, full_data, covariates, estimated_var, estimate_mean = FALSE, positive_label = NULL, algorithm = "glm", proc = NULL, ...) {
 	known_values = sample_data[, estimated_var]
 	if (!is.null(positive_label))
@@ -108,7 +113,7 @@ model_based = function(sample_data, full_data, covariates, estimated_var, estima
 	known_predicted_values = all_predicted_values[1:length(known_values)]
 	predicted_values = all_predicted_values[(length(known_values) + 1):length(all_predicted_values)]
 	total = sum(known_values, predicted_values, -known_predicted_values)
-	
+
 	if (estimate_mean)
 		return(total / nrow(full_data))
 	else
@@ -134,11 +139,13 @@ model_based = function(sample_data, full_data, covariates, estimated_var, estima
 #' @return The population total estimation (or mean if specified by the `estimate_mean` parameter).
 #' @references Särndal, C. E., Swensson, B., & Wretman, J. (1992). \emph{Model assisted survey sampling.} Springer, New York.
 #' @examples
-#' #Simple example with default parameters
+#' #Simple example
 #' covariates = c("education_primaria", "education_secundaria",
-#'    "education_terciaria", "age", "sex", "language")
+#'    "age", "sex", "language")
+#' if (is.numeric(sampleNP$vote_gen))
+#'    sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
 #' model_assisted(sampleNP, nrow(population) / nrow(sampleNP),
-#'    population, covariates, "vote_gen")
+#'    population, covariates, "vote_gen", positive_label = 'T', algorithm = 'glmnet')
 model_assisted = function(sample_data, weights, full_data, covariates, estimated_var, estimate_mean = FALSE, positive_label = NULL, algorithm = "glm", proc = NULL, ...) {
 	known_values = sample_data[, estimated_var]
 	if (!is.null(positive_label))
@@ -147,7 +154,7 @@ model_assisted = function(sample_data, weights, full_data, covariates, estimated
 	predicted_values = matching(sample_data, all_data, covariates, estimated_var, positive_label, algorithm = algorithm, proc = proc, ...)
 	known_predicted_values = predicted_values[1:length(known_values)]
 	total = sum(predicted_values, -known_predicted_values) + sum((known_values - known_predicted_values) * weights)
-	
+
 	if (estimate_mean)
 		return(total / nrow(full_data))
 	else
@@ -173,15 +180,17 @@ model_assisted = function(sample_data, weights, full_data, covariates, estimated
 #' @return The population total estimation (or mean if specified by the `estimate_mean` parameter).
 #' @references Wu, C., & Sitter, R. R. (2001). \emph{A model-calibration approach to using complete auxiliary information from survey data.} Journal of the American Statistical Association, 96(453), 185-193.
 #' @examples
-#' #Simple example with default parameters
+#' #Simple example
 #' covariates = c("education_primaria", "education_secundaria",
-#'    "education_terciaria", "age", "sex", "language")
+#'    "age", "sex", "language")
+#' if (is.numeric(sampleNP$vote_gen))
+#'    sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
 #' model_calibrated(sampleNP, nrow(population) / nrow(sampleNP),
-#'    population, covariates, "vote_gen")
+#'    population, covariates, "vote_gen", positive_label = 'T', algorithm = 'glmnet')
 model_calibrated = function(sample_data, weights, full_data, covariates, estimated_var, estimate_mean = FALSE, positive_label = NULL, algorithm = "glm", proc = NULL, ...) {
 	if (length(weights) == 1)
 		weights = rep(weights, nrow(sample_data))
-	
+
 	known_values = sample_data[, estimated_var]
 	if (!is.null(positive_label))
 		known_values = known_values == positive_label
@@ -191,7 +200,7 @@ model_calibrated = function(sample_data, weights, full_data, covariates, estimat
 	predicted_total = sum(predicted_values, -known_predicted_values)
 	final_weights = calib(known_predicted_values, weights, predicted_total, method = "raking") * weights
 	total = sum(known_values * final_weights)
-	
+
 	if (estimate_mean)
 		return(total / nrow(full_data))
 	else
@@ -209,7 +218,7 @@ model_calibrated = function(sample_data, weights, full_data, covariates, estimat
 #' @return A vector with the corresponding weights.
 #' @references Valliant, R. (2019). \emph{Comparing Alternatives for Estimation from Nonprobability Samples}. Journal of Survey Statistics and Methodology, smz003, \url{https://doi.org/10.1093/jssam/smz003}
 #' @examples
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' valliant_weights(data_propensities$convenience)
 valliant_weights = function(propensities) {
@@ -227,7 +236,7 @@ valliant_weights = function(propensities) {
 #' @return A vector with the corresponding weights.
 #' @references Schonlau, M., & Couper, M. P. (2017). \emph{Options for conducting web surveys.} Statistical Science, 32(2), 279-292.
 #' @examples
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' sc_weights(data_propensities$convenience)
 sc_weights = function(propensities) {
@@ -249,16 +258,16 @@ sc_weights = function(propensities) {
 #' @references Valliant, R., & Dever, J. A. (2011). \emph{Estimating propensity adjustments for volunteer web surveys.} Sociological Methods & Research, 40(1), 105-137.
 #' @references Cochran, W. G. (1968). \emph{The Effectiveness of Adjustment by Subclassification in Removing Bias in Observational Studies.} Biometrics, 24(2), 295-313
 #' @examples
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' vd_weights(data_propensities$convenience, data_propensities$reference)
 vd_weights = function(convenience_propensities, reference_propensities, g = 5) {
 	propensities = append(convenience_propensities, reference_propensities)
-	
+
 	cuts = cut(1:length(propensities), g, labels = FALSE)
 	data_order = order(propensities)
 	strata = vector()
-	
+
 	for (i in 1:g) {
 		strata[data_order[cuts == i]] = i
 	}
@@ -286,16 +295,16 @@ vd_weights = function(convenience_propensities, reference_propensities, g = 5) {
 #' @references Lee, S., & Valliant, R. (2009). \emph{Estimation for volunteer panel web surveys using propensity score adjustment and calibration adjustment.} Sociological Methods & Research, 37(3), 319-343.
 #' @references Cochran, W. G. (1968). \emph{The Effectiveness of Adjustment by Subclassification in Removing Bias in Observational Studies.} Biometrics, 24(2), 295-313
 #' @examples
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' lee_weights(data_propensities$convenience, data_propensities$reference)
 lee_weights = function(convenience_propensities, reference_propensities, g = 5) {
 	propensities = append(convenience_propensities, reference_propensities)
-	
+
 	cuts = cut(1:length(propensities), g, labels = FALSE)
 	data_order = order(propensities)
 	strata = vector()
-	
+
 	for (i in 1:g) {
 		strata[data_order[cuts == i]] = i
 	}
@@ -328,8 +337,8 @@ lee_weights = function(convenience_propensities, reference_propensities, g = 5) 
 #' n = nrow(sampleNP)
 #' N = 50000
 #' language_total = 45429
-#' covariates = c("education_primaria","education_secundaria",
-#'    "education_terciaria","age","sex")
+#' covariates = c("education_primaria", "education_secundaria",
+#'    "age", "sex")
 #' pi = propensities(sampleNP, sampleP, covariates, algorithm = "glm", smooth = FALSE)
 #' wi = sc_weights(pi$convenience)
 #' calib_weights(sampleNP$language, language_total, wi, N, method = "raking")
@@ -348,7 +357,7 @@ calib_weights = function(Xs, totals, initial_weights, N, ...) {
 #' @param N An integer specifying the population size (optional).
 #' @return A vector with the corresponding estimations.
 #' @examples
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' psa_weights = sc_weights(data_propensities$convenience)
 #' mean_estimation(sampleNP, psa_weights, c("vote_pens"))
@@ -370,7 +379,7 @@ mean_estimation = function(sample, weights, estimated_vars, N = NULL) {
 #' @param N An integer specifying the population size.
 #' @return A vector with the corresponding estimations.
 #' @examples
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' psa_weights = sc_weights(data_propensities$convenience)
 #' total_estimation(sampleNP, psa_weights, c("vote_pens"), 50000)
@@ -393,24 +402,24 @@ total_estimation = function(sample, weights, estimated_vars, N) {
 #' @param N An integer specifying the population size (optional).
 #' @return A vector with the corresponding estimations.
 #' @examples
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' psa_weights = sc_weights(data_propensities$convenience)
 #'
 #' #The function will estimate the proportion of individuals
-#' #with the 0 value in vote_pens and the 1 value in vote_gen
-#' prop_estimation(sampleNP, psa_weights, c("vote_pens", "vote_gen"), c(0, 1))
+#' #with the 0 value in vote_pens and the 1 value in vote_pir
+#' prop_estimation(sampleNP, psa_weights, c("vote_pens", "vote_pir"), c(0, 1))
 prop_estimation = function(sample, weights, estimated_vars, class, N = NULL) {
   total = ifelse(is.null(N), sum(weights), N)
 
   sapply(estimated_vars, function(var_name) {
-    sum(sample[, var_name] == class[estimated_vars %in% var_name] * weights) / total
+    sum(sample[, var_name] == class[var_name %in% estimated_vars] * weights) / total
   })
 }
 
-#' Calculates Jackknife variance with reweighting
+#' Calculates Jackknife variance with reweighting for PSA
 #'
-#' Calculates the variance of a given estimator by Leave-One-Out Jackknife (Quenouille, 1956) with reweighting in each iteration.
+#' Calculates the variance of PSA by Leave-One-Out Jackknife (Quenouille, 1956) with reweighting in each iteration.
 #'
 #' The estimation of the variance requires a recalculation of the estimates in each iteration which might involve weighting adjustments, leading to an increase in computation time. It is expected that the estimated variance captures the weighting adjustments' variability and the estimator's variability.
 #'
@@ -435,11 +444,11 @@ prop_estimation = function(sample, weights, estimated_vars, class, N = NULL) {
 #' @examples
 #' \donttest{
 #' #A simple example without calibration and default parameters
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' jackknife_variance("vote_pens",sampleNP, sampleP, covariates)
 #'
 #' #An example with linear calibration and default parameters
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' calib_vars = c("age", "sex")
 #' totals = c(2544377, 24284)
 #'
@@ -467,7 +476,7 @@ jackknife_variance = function(estimated_vars, convenience_sample, reference_samp
 	(sample_size - 1) / sample_size * sum((estimations - mean(estimations))^2) * correction_factor
 }
 
-#' Calculates Jackknife variance with reweighting
+#' Calculates Jackknife variance with reweighting for an arbitrary estimator
 #'
 #' Calculates the variance of a given estimator by Leave-One-Out Jackknife (Quenouille, 1956) with reweighting in each iteration.
 #'
@@ -481,16 +490,19 @@ jackknife_variance = function(estimated_vars, convenience_sample, reference_samp
 #' @examples
 #' \donttest{
 #' covariates = c("education_primaria", "education_secundaria",
-#'    "education_terciaria", "age", "sex", "language")
+#'    "age", "sex", "language")
+#' if (is.numeric(sampleNP$vote_gen))
+#'    sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
 #' vote_gen_estimator = function(sample) {
-#'    model_based(sample, population, covariates, "vote_gen")
+#'    model_based(sample, population, covariates,
+#'       "vote_gen", positive_label = 'T', algorithm = 'glmnet')
 #' }
 #' generic_jackknife_variance(sampleNP, vote_gen_estimator)
 #' }
 generic_jackknife_variance = function(sample, estimator, N = NULL) {
 	sample_size = nrow(sample)
 	correction_factor = ifelse(is.null(N), 1, 1 - sample_size / N)
-	
+
 	estimations = sapply(1:sample_size, function(i) {
 		estimator(sample[-i,])
 	})
@@ -511,7 +523,7 @@ generic_jackknife_variance = function(sample, estimator, N = NULL) {
 #' @return A vector containing the resulting variance for each variable.
 #' @references Quenouille, M. H. (1956). \emph{Notes on bias in estimation.} Biometrika, 43(3/4), 353-360.
 #' @examples
-#' covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+#' covariates = c("education_primaria", "education_secundaria")
 #' data_propensities = propensities(sampleNP, sampleP, covariates)
 #' psa_weights = sc_weights(data_propensities$convenience)
 #' fast_jackknife_variance(sampleNP, psa_weights, c("vote_pens"), 50000)
@@ -538,7 +550,7 @@ fast_jackknife_variance = function(sample, weights, estimated_vars, N = NULL) {
 #' @return A vector containing the lower and upper bounds.
 #' @examples
 #' covariates = c("education_primaria","education_secundaria",
-#' "education_terciaria", "age", "sex")
+#' "age", "sex")
 #' pi = propensities(sampleNP, sampleP, covariates, algorithm = "glm", smooth = FALSE)
 #' psa_weights = sc_weights(pi$convenience)
 #' N = 50000

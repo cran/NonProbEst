@@ -2,7 +2,7 @@
 % Please edit documentation in R/NonProbEst.R
 \name{jackknife_variance}
 \alias{jackknife_variance}
-\title{Calculates Jackknife variance with reweighting}
+\title{Calculates Jackknife variance with reweighting for PSA}
 \usage{
 jackknife_variance(
   estimated_vars,
@@ -60,7 +60,7 @@ jackknife_variance(
 The resulting variance.
 }
 \description{
-Calculates the variance of a given estimator by Leave-One-Out Jackknife (Quenouille, 1956) with reweighting in each iteration.
+Calculates the variance of PSA by Leave-One-Out Jackknife (Quenouille, 1956) with reweighting in each iteration.
 }
 \details{
 The estimation of the variance requires a recalculation of the estimates in each iteration which might involve weighting adjustments, leading to an increase in computation time. It is expected that the estimated variance captures the weighting adjustments' variability and the estimator's variability.
@@ -68,11 +68,11 @@ The estimation of the variance requires a recalculation of the estimates in each
 \examples{
 \donttest{
 #A simple example without calibration and default parameters
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
 jackknife_variance("vote_pens",sampleNP, sampleP, covariates)
 
 #An example with linear calibration and default parameters
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
 calib_vars = c("age", "sex")
 totals = c(2544377, 24284)
 

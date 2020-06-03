@@ -24,11 +24,11 @@ A vector with the corresponding estimations.
 Estimates the proportion of a given class or classes for the specified variables measured in a sample given some pre-calculated weights.
 }
 \examples{
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
 data_propensities = propensities(sampleNP, sampleP, covariates)
 psa_weights = sc_weights(data_propensities$convenience)
 
 #The function will estimate the proportion of individuals
-#with the 0 value in vote_pens and the 1 value in vote_gen
-prop_estimation(sampleNP, psa_weights, c("vote_pens", "vote_gen"), c(0, 1))
+#with the 0 value in vote_pens and the 1 value in vote_pir
+prop_estimation(sampleNP, psa_weights, c("vote_pens", "vote_pir"), c(0, 1))
 }

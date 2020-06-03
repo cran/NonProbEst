@@ -45,10 +45,13 @@ It uses the model based estimator. The idea in order to estimate the population 
 Training of the models is done via the `caret` package. The algorithm specified in \code{algorithm} must match one of the names in the list of algorithms supported by `caret`.
 }
 \examples{
-#Simple example with default parameters
+#Simple example
 covariates = c("education_primaria", "education_secundaria",
-   "education_terciaria", "age", "sex", "language")
-model_based(sampleNP, population, covariates, "vote_gen")
+   "age", "sex", "language")
+if (is.numeric(sampleNP$vote_gen))
+   sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
+model_based(sampleNP, population, covariates,
+   "vote_gen", positive_label = 'T', algorithm = 'glmnet')
 }
 \references{
 Valliant, R., Dorfman, A. H., & Royall, R. M. (2000) \emph{Finite population sampling and inference: a prediction approach.} Wiley, New York.

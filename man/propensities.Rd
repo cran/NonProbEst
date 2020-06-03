@@ -2,7 +2,7 @@
 % Please edit documentation in R/NonProbEst.R
 \name{propensities}
 \alias{propensities}
-\title{Calculates each sample propensities}
+\title{Calculates sample propensities}
 \usage{
 propensities(
   convenience_sample,
@@ -44,7 +44,7 @@ The smoothing formula for propensities avoids mathematical irregularities in the
 }
 \examples{
 #Simple example with default parameters
-covariates = c("education_primaria", "education_secundaria", "education_terciaria")
+covariates = c("education_primaria", "education_secundaria")
 propensities(sampleNP, sampleP, covariates)
 }
 \references{

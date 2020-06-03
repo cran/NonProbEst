@@ -48,11 +48,13 @@ It uses the model assisted estimator introduced by Särndal et al. (1992).
 Training of the models is done via the `caret` package. The algorithm specified in \code{algorithm} must match one of the names in the list of algorithms supported by `caret`.
 }
 \examples{
-#Simple example with default parameters
+#Simple example
 covariates = c("education_primaria", "education_secundaria",
-   "education_terciaria", "age", "sex", "language")
+   "age", "sex", "language")
+if (is.numeric(sampleNP$vote_gen))
+   sampleNP$vote_gen = factor(sampleNP$vote_gen, c(0, 1), c('F', 'T'))
 model_assisted(sampleNP, nrow(population) / nrow(sampleNP),
-   population, covariates, "vote_gen")
+   population, covariates, "vote_gen", positive_label = 'T', algorithm = 'glmnet')
 }
 \references{
 Särndal, C. E., Swensson, B., & Wretman, J. (1992). \emph{Model assisted survey sampling.} Springer, New York.
